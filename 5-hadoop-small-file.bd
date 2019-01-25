@@ -1,0 +1,65 @@
+--小文件解决方案--
+	小文件指的是size比hdfs的block size--64M小的多的文件
+	任何一个文件、 目录和block都会被表示为一个object存储
+	在namecode的内存中，每一个object占用150bytes的内存空间。
+--四种解决方案
+	应用程序自己控制
+	archive
+	Sequence File/Map File
+	合并小文件、如HBase部分的compact
+	CombineFileInputFormat
+	
+Hadoop Archives：HAR files
+	为了缓解大量小文件消耗namenode内存的问题。
+	HAR文件是通过在HDFS上构建一个层次化的文件系统来工作的，一个
+	HAR文件是通过hadoop的archive命令来创建，这个命令实际上是运行了
+	一个MapReduce任务将小文件打成HAR。
+	对于client端来说，使用HAR文件没有任何影响，所有的原始文件可访问，但是
+	在hdfs端它内部的文件数减少了。
+	
+	通过HAR来读取一个文件并不会比直接从hdfs中读取文件更高效，而且实际上
+	可能还会稍微低效一点，因为对每一个HAR文件的访问都需要完成两层
+	index文件的读取和文件本身数据的读取。
+	
+	创建文件
+	hadoop archive -archiveName xxx.har -p /src/dest
+	查看内部结构
+	hadoop fs -lsr /dest/xxx.har
+
+SequenceFile
+	使用SequenceFile处理小文件。
+	通过用filename作为key，filecontents作为value。
+	存储结构上SequeceFile主要由一个Header后跟着多条Record组成。
+	Header 包含：Key classname Value classname 存储压缩算法 、用户自定义元数据
+	每条Record以键值对的方式进行出存储，用来表示它的字符数组可
+	依次解析成：记录的长度、key的长度、key值和Value值，
+	并且Value值得结构取决于该记录是否被压缩。
+	数据压缩有利于节省磁盘空间和加快网络传输。
+	SequenceFile支持两种格式的数据压缩：分别是record compression
+	和 block compression
+	
+	工作中使用的是SequenceFile的block 压缩，SequenceFile存在的意义是
+	解决小文件、延迟特别大的问题。
+
+MapFile 
+	MapFile是基于SequenceFile，和SequenceFile的区别是：
+	MapFile是排序后的SequenceFile，由两部分组成，Data和Index
+	index是文件的数据索引，记录每个record的key值，及该record在文件中的偏移
+	位置
+	
+	MapFile的检索效率是高效的，缺点是会消耗一部分内存来存储index的数据。
+	
+	对小文件的处理使用SequenceFile或MapFile,对检索要求比较高使用MapFile
+	老的Hbase底层就是用MapFile存储数据的。
+---集群间复制---
+	不同集群之间复制数据
+	hadoop disco hdfs://hadoop1:9000/out.har hdfs://hadoop2:9000/
+	什么情况下会用：
+		一个集群压力大了，namenode的内存满了，存储数据存不了了
+		
+	
+	
+	
+	
+	
+	
