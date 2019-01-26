@@ -1,0 +1,28 @@
+--MapReduce的执行过程--
+    用户写的代码通过JobClient提交给JobTracker
+    Job对象中封装了JobClient
+
+    把我们的代码打包成jar包，上传到hdfs中，JobClient就会获得一个jar包
+    在hdfs中的一个路径
+    我们执行hadoop jar这个命令时，时机上会把我们的jar包上传到hdfs中，
+    程序之间的运行、传递的都是jar地址，在TaskTracker这块，要跑map任务和
+    reduce任务是，解析jar包，找到MyMapper和MyReduce定义，通过反射，实例化
+    MyMapper和MyReducer这个对象，然后去执行其中的Map方法或者是Reducer方法，实际
+    程序在运行时，是MapTask类、ReduceTask类。
+
+    JobTracker和TaskTracker之间通信是通过TaskTracker维持一个心跳机制--heartbeat实现
+    的，保持TaskTracker的机器状态信息汇报和JobTracker的命令指令下达。采用的依然
+    是RPC的通信机制，使用的是InnerTrackerProtocol。
+
+    jobTracker如何和hdfs进行通信?
+    jobTracker这边使用FileSystem这个类。代码提交时，jar包路径、输入文件路径、输出文件路径
+    都写到配置中了，JobTracker就可拿到配置、TaskTracker也可以拿到。
+
+-------------------
+    我们写的Mapper方法继承来自Mapper类
+        类中的map()方法需要我们去实现，这个方法只被调用一次，在这里我们只需要覆盖这个方法，
+        把自己的业务逻辑通过代码给写进去
+        setup()，在我们任务开始的时候会被调用一次
+        cleanup()，在任务结束的时候，会被调用一次，在我们整个map任务开始的时候
+        会调用setup(),任务结束的时候回调用cleanup(),在map任务中间会调用map()，
+        类似于javaWeb中的filter。
