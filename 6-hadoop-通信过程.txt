@@ -1,0 +1,29 @@
+--rpc、客户端与NameNode通信的过程--
+
+远程过程：java进程，即一个java进程调用另外一个java进程中对象的方法
+
+调用方--客户端client
+被调用方--服务端server
+
+rpc的通信在java中表现为client去调用server端对象中的方法
+rpc通信就是cs结构的通信，client知道server端被调用对象的接口
+rpc是hadoop分布式机制运行的基础
+
+--客户端与NameNode通信的过程--
+	NameNode本身就是一个RPC的服务端，主要实现的接口有:
+	ClientProtocol、DatanodeProtocol、NamenodeProtocol
+	-----
+	ClientProtocol：是客户端FileSystemClient与NameNode通信的接口
+	DatanodeProtocol:是DataNode和NameNode通信的接口
+	NamenodeProtocol：是SecondaryNameNode和NameNode通信的接口
+
+DFSClient：程序员代码直接调用NameNode接口的对象
+	用户代码是通过DistributedFileSystem调用DFSClient对象，才能与NameNode打交道。
+	我们的RPC客户端实际上是DFSClient,服务端是namenode
+
+---Namenode为什么要用RPC机制？
+	RPC是远程过程调用，会起多个java进程，并且之间进行通信的时候用的是
+	Socket通信。意味着RPC通信客户端和服务端可分布在多个服务器上，NameNode作为
+	其中一部分，需要实现RPC,允许一个完整的程序运行在不同的服务器上，实现
+	分布式。
+	
