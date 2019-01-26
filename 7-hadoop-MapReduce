@@ -1,0 +1,60 @@
+--MapReduce概述--
+Map/Reduce是一种分布式计算模型，分布在多台机器上，运行在TaskTracker
+通常情况下
+    TaskTracker、DataNode部署在一起。TaskTracker要么运行Map，要么运行Reduce
+
+    Map，程序代码分到所有的tasktracker节点上，只处理当前datanode上的数据
+    ，并行处理，无网络传输，各自输出map到各自linux磁盘上
+    Reduce处理各个节点的linux磁盘的map数据，处理完之后的数据输出放到datanode上。
+    --原先处理方式--
+        集中式的数据处理，海量数据移动到一个数据处理节点上，程序运行大量时间消耗
+        在网络传输、磁盘IO，串行性能不好
+
+    MapReduce计算模型包括Map和Reduce两个阶段，我们用户只需要处理map阶段和reduce阶段
+    就行了。
+    1)map处理本机数据
+    2)reduce把map输出的结果汇总到一起
+
+    数据传输方式采用键值对形式 key-value，键值对也是我们两个函数的形参、输入参数
+
+    JobTracker管理 map、reduce任务的执行，jobTracker里边的这个程序是来自于客户的提交。
+
+    map和reduce之间数据分发的过程乘坐shuffle过程，shuffle在细节中：map数据产生之后需要
+    进行分区，每个reduce处理的数据就是不同map分区下的数据。reduce就会把所有map分区中的
+    数据处理完之后写出到次买盘中。
+    官方源码步骤把suffer归结为reduce阶段，map到reduce数据分发的过程shuffle。
+    shuffle就是把我们map中的数据分发到reduce去的一个过程。
+    reduce执行完之后就直接结束了，直接写出去，不会经过jobtracker，但是会通知jobtracker
+    运行结束，有几个reduce就有几个shuffle分发的过程。
+    汇总节点时主动去其他节点要数据的，reduce这个节点其实是知道各个map的。
+    JobTracker是管理角色，taskTracker只是工作者。
+    高容错性:JobTracker会监控各个节点的map任务和reduce任务的执行情况，如果
+    有一个map任务宕了，会启用一个重启机制，再会重启一个mapper任务去执行，如果
+    连续宕机3次，则不会重启了，整个程序运行失败。
+
+ --MapReduce执行过程--
+    1 map任务处理
+        1-1 读hdfs文件为内容，每一个行解析成一个key-value，key是字节偏移量，value为内容
+            每一个键值对调用一次map函数，map函数处理输入的每一行。
+        1-2 自定义map函数，写自己的逻辑，对输入的key、value处理，转换成新的key、value输出。
+        1-3 对输出的key-value进行分区，根据业务要求，把map输出的数据分成多区
+        1-4 对不同分区上的数据，按照key进行排序，分组，相同key的value放到一个集合中
+        1-5 把分组后的数据进行归约
+    2 reduce任务处理
+        shuffle：把我们map中的数据分发到reduce中去的一个错陈个，分组还是在map这边。
+        2-1 每个reduce会接收各个map中相同分区中的数据
+        2-2 对多个map任务的输出进行合并吗，排序，写reduce函数自己的逻辑，对输入的key、value
+            进行处理，转换成新的key、value输出
+        2-3 把reduce的输出保存到新的文件中
+
+    JobTracker只做管理和通知，数据只在map和reduce之间流动，准确的说，只会在TaskTracker之间
+    流动。
+        排序是框架内置的，默认就有，分组不是减少网络开销，只是把相同的key的value放到一起，并不
+        减少数据，分组是给了同一个map中相同key的value见面的机会，作用是为了在reduce中进行处理。
+        map函数仅能处理一行，两行中出现的一个单词无法在一个map中处理的，
+        map不能处理位于多行中的相同的单词
+        在自定义MyMapper类内部定义HashMap处理的是一个block，在map方法内部定义处理的是一行。
+
+    hadoop全局中不会有线程问题，因为hadoop起的是进程，不会有并发问题存在。
+
+
