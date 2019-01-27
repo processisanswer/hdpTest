@@ -1,0 +1,19 @@
+-----
+    我们的任务到job.waitForCompletion(),才会被真正的执行，将
+    任务提交给JobTracker之后，JobTracker分发到各个TaskTracker
+    上去执行，也就是我们的map任务。
+    我们的作业job运行的时候，job map的数量有InputSplit个数决定的，
+    有多少个InputSplit就有多少个map。
+--数据如何通过RecordRead把InputSplit数据给解析出来的？--
+    每一个键值对，调用一个map函数
+    RecordRead是通过in.readLine读取每一行的。
+    -----
+    我们的代码在运行的时候,已经把jar上传到hdfs中去了,然后交给jobTracker
+    仅仅是这个jar的url,一个地址.
+　　　　map运行的数量:mapred.map.tasks 默认2个
+　　　　reduce运行的数量:mapred.reduce.tasks 默认1个
+　　　　taskTracker上运行的最大map数量:mapred.tasktracker.map.task.maximum 默认2个
+　　　　tasktracker上运行reduce最大数量:mapred.tasktracker.reduce.task.maximum 默认2个
+　　　　jobtracker根据slot分配task,mapreduce在运行的时候分为job和task,
+    job由jobtracker根据调度器进行分配的.map和task下面的这些任务是由slot决定分配.
+   ------

@@ -12,5 +12,6 @@ public class MyServer {
 
     public static void main(String[] args) throws Exception{
         //ProtobufRpcEngine.Server server=RPC.getServer(new MyBiz());
+
     }
 }
