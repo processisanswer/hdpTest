@@ -1,0 +1,24 @@
+--hive安装部署--
+
+hive是基于hadoop的一个数据仓库工具，可以将结构化的数据文件映射为一张表，
+并提供简单的sql查询功能，将sql语句转换为MapReduce任务进行运行。
+
+
+# Hadoop的位置：
+export HADOOP_HOME=/home/hadoop-2.2.0
+# hive的conf目录位置：
+export HIVE_CONF_DIR=/home/apache-hive-2.3.4/conf
+# hive的lib目录位置：
+export HIVE_AUX_JARS_PATH=/home/apache-hive-2.3.4/lib
+
+--hive主要作用--
+    解决hadoop中的mapreduce调用如果面向DBA的时候，直接写sql即可。
+    hive是要类SQL语句(HSQL)来实现对hadoop下的数据管理。属于数据仓库
+    的范畴。
+    数据库：侧重于OLTP-在线事务处理
+    数据仓库：侧重于OLAP-在线分析处理
+
+    简单来说，hive就是hadoop上架了一层SQL接口，可以将sql翻译成
+    MapReduce去Hadoop上执行，这样就使得数据开发和分析人员很方便
+    的使用sql来完成海量数据的统计和分析，而不必使用编程语言开发
+    MapReduce那么麻烦。
